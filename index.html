@@ -102,54 +102,41 @@
             <circle cx="50" cy="40" r="6" fill="#FFFFFF"/>
         </svg>
 
-        <!-- 頂部標題與日期欄 -->
+        <!-- 頂部標題與右上角指定日期欄 -->
         <div class="flex items-center justify-between gap-1 pb-1.5 border-b border-[#E5DEC9] relative z-10">
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5 shrink-0">
                 <!-- 朱印徽章 -->
                 <div class="hanko-stamp px-1.5 py-0.5 text-[10px] rounded select-none bg-white leading-tight">
                     英語廣播
                 </div>
-                <h1 class="text-sm font-bold tracking-wider text-[#2B2B2B]">
-                    ICRT 每日新聞
+                <h1 class="text-xs font-bold tracking-wider text-[#2B2B2B]">
+                    ICRT 新聞
                 </h1>
             </div>
 
-            <!-- 中文星期風格日期顯示標籤 -->
-            <div class="flex items-center gap-1 bg-white border border-[#E2D9C8] px-2 py-0.5 rounded text-[11px] text-[#4A443B]">
-                <span class="text-[#C53D43] font-bold text-[10px]">●</span>
-                <span id="japanese-date-badge" class="tracking-tight font-medium">載入中...</span>
+            <!-- 右上角：指定日期選擇器 + 星期顯示 + 回今日 -->
+            <div class="flex items-center gap-1 bg-white border border-[#D5CBB8] px-1.5 py-0.5 rounded text-[11px] text-[#4A443B]">
+                <input 
+                    type="date" 
+                    id="manual-date-picker" 
+                    title="指定音檔日期"
+                    class="bg-white text-[11px] text-[#2B2B2B] font-medium focus:outline-none cursor-pointer w-[98px]"
+                />
+                <span id="japanese-date-badge" class="tracking-tight font-medium text-[#C53D43] text-[10px] shrink-0">(載入中)</span>
+                <button 
+                    id="reset-today-btn" 
+                    type="button"
+                    title="回到今日"
+                    class="hidden text-[#1E3A5F] underline hover:text-[#C53D43] text-[10px] shrink-0 ml-0.5"
+                >
+                    今
+                </button>
             </div>
         </div>
 
         <!-- 核心內容區（保留原本 ID 以向下相容，並由 JS 渲染和風介面） -->
         <div class="player-content relative z-10 my-auto" id="player-content-v1-6-0">
             <!-- 內容將由下面的腳本動態生成 -->
-        </div>
-
-        <!-- 底部工具列：手動切換日期（已移除嵌入語法按鈕） -->
-        <div class="pt-1.5 border-t border-[#E6DEC8] flex items-center justify-between text-[11px] text-[#787166] relative z-10">
-            <div class="flex items-center gap-1.5 w-full justify-between">
-                <div class="flex items-center gap-1">
-                    <label for="manual-date-picker" class="hover:text-[#2B2B2B] cursor-pointer flex items-center gap-1">
-                        <svg class="w-3 h-3 text-[#C53D43]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                        <span>指定日期：</span>
-                    </label>
-                    <input 
-                        type="date" 
-                        id="manual-date-picker" 
-                        class="bg-white border border-[#D5CBB8] rounded px-1.5 py-0 text-[11px] text-[#2B2B2B] focus:outline-none focus:border-[#1E3A5F]"
-                    />
-                </div>
-                <button 
-                    id="reset-today-btn" 
-                    type="button"
-                    class="hidden text-[#1E3A5F] underline hover:text-[#C53D43] text-[11px]"
-                >
-                    回今日
-                </button>
-            </div>
         </div>
     </div>
 
@@ -190,13 +177,10 @@
                 return `${year}-${month}-${day}`;
             };
 
-            // 輔助函式: 格式化為中文日期顯示 "YYYY/MM/DD(週五)" 適應 360px 寬度
-            const formatChineseDisplayDate = (dateObj) => {
-                const year = dateObj.getFullYear();
-                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                const day = String(dateObj.getDate()).padStart(2, '0');
+            // 輔助函式: 格式化為中文星期顯示 "(週五)" 搭配右上角日期選擇器
+            const formatChineseDayBadge = (dateObj) => {
                 const chineseDay = CHINESE_DAYS[dateObj.getDay()];
-                return `${year}/${month}/${day}(${chineseDay})`;
+                return `(${chineseDay})`;
             };
 
             // 計算預設目標音檔日期與狀態（週一至週五直接抓取當天音檔）
@@ -230,16 +214,16 @@
                 const { targetDate, showPlayer, message, subMessage } = options;
                 contentDiv.innerHTML = '';
 
-                // 更新右上角中文日期與星期標籤
+                const activeDate = showPlayer ? targetDate : new Date();
+
+                // 更新右上角中文星期標籤
                 if (dateBadge) {
-                    dateBadge.textContent = showPlayer 
-                        ? formatChineseDisplayDate(targetDate)
-                        : formatChineseDisplayDate(new Date());
+                    dateBadge.textContent = formatChineseDayBadge(activeDate);
                 }
 
-                // 同步日期選擇器數值
-                if (datePicker && showPlayer) {
-                    datePicker.value = formatDateInput(targetDate);
+                // 同步右上角日期選擇器數值
+                if (datePicker) {
+                    datePicker.value = formatDateInput(activeDate);
                 }
 
                 if (showPlayer) {
