@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICRT 每日英語廣播 - 和風播放器</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts: Noto Serif TC 與 Shippori Mincho 營造濃厚日式書卷感 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Shippori+Mincho:wght@500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --washi-bg: #FFFFFF;       /* 純白底色 */
+            --sumi-ink: #2B2B2B;       /* 墨色 */
+            --ai-indigo: #1E3A5F;      /* 藍染 / 靛藍 */
+            --shu-red: #C53D43;        /* 朱色 / 茜色 */
+            --matcha-green: #5B6E58;   /* 抹茶 / 松葉色 */
+            --gold-wood: #C8B69E;      /* 白木 / 金茶邊框 */
+        }
+
+        body {
+            font-family: 'Shippori Mincho', 'Noto Serif TC', serif;
+            background-color: #FFFFFF;
+            color: var(--sumi-ink);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* 純白背景搭配極淡雅灰色和風邊框 */
+        .washi-container {
+            background-color: #FFFFFF;
+            background-image: none;
+            box-shadow: 0 4px 20px -2px rgba(43, 43, 43, 0.06);
+        }
+
+        /* 日式雙層細框 (Kaku-waku) */
+        .japanese-frame {
+            border: 1.5px solid var(--gold-wood);
+            position: relative;
+        }
+        .japanese-frame::before {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            right: 4px;
+            bottom: 4px;
+            border: 1px solid rgba(200, 182, 158, 0.45);
+            pointer-events: none;
+            border-radius: 0.375rem;
+        }
+
+        /* 朱印 (Hanko) 印章風格 */
+        .hanko-stamp {
+            border: 1.5px solid var(--shu-red);
+            color: var(--shu-red);
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            box-shadow: inset 0 0 0 1px rgba(197, 61, 67, 0.15);
+            transform: rotate(-3deg);
+        }
+
+        /* 客製化原生 Audio 播放器外框 */
+        audio {
+            width: 100%;
+            height: 44px;
+            border-radius: 8px;
+            outline: none;
+            background-color: #FFFFFF;
+        }
+        audio::-webkit-media-controls-panel {
+            background-color: #FFFFFF;
+        }
+
+        /* 進度條動畫與按鈕轉場 */
+        .btn-wafuu {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-wafuu:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(30, 58, 95, 0.18);
+        }
+        .btn-wafuu:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="p-2 sm:p-3 flex items-center justify-center min-h-screen bg-white">
+
+    <!-- 主外框：適合直接透過 iframe 嵌入任何網頁區塊 -->
+    <div class="washi-container japanese-frame rounded-lg w-full max-w-xl p-5 sm:p-6 relative overflow-hidden bg-white">
+        
+        <!-- 角落裝飾：傳統梅花/櫻花家紋浮水印 -->
+        <svg class="
+            w-28 h-28 text-gray-100 opacity-60 absolute -right-6 -top-6 pointer-events-none" 
+            viewBox="0 0 100 100" fill="currentColor">
+            <path d="M50 15 C55 30 70 30 70 15 C85 20 80 35 65 40 C80 45 85 60 70 65 C70 50 55 50 50 65 C45 50 30 50 30 65 C15 60 20 45 35 40 C20 35 15 20 30 15 C30 30 45 30 50 15 Z" />
+            <circle cx="50" cy="40" r="6" fill="#FFFFFF"/>
+        </svg>
+
+        <!-- 頂部標題與日期欄 -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pb-3.5 mb-4 border-b border-[#E5DEC9] relative z-10">
+            <div class="flex items-center gap-3">
+                <!-- 朱印徽章 -->
+                <div class="hanko-stamp px-2 py-0.5 text-xs rounded select-none bg-white">
+                    英語廣播
+                </div>
+                <div>
+                    <h1 class="text-lg sm:text-xl font-bold tracking-wider text-[#2B2B2B] flex items-center gap-2">
+                        ICRT 每日新聞聽力
+                    </h1>
+                    <p class="text-xs text-[#6E685F] tracking-widest mt-0.5">
+                        LUNCH BOX · 每日英語廣播
+                    </p>
+                </div>
+            </div>
+
+            <!-- 中文星期風格日期顯示標籤 -->
+            <div class="flex items-center gap-1.5 bg-white border border-[#E2D9C8] px-3 py-1 rounded-md text-xs sm:text-sm text-[#4A443B]">
+                <span class="text-[#C53D43] font-bold">●</span>
+                <span id="japanese-date-badge" class="tracking-wider font-medium">載入中...</span>
+            </div>
+        </div>
+
+        <!-- 核心內容區（保留原本 ID 以向下相容，並由 JS 渲染和風介面） -->
+        <div class="player-content relative z-10" id="player-content-v1-6-0">
+            <!-- 內容將由下面的腳本動態生成 -->
+        </div>
+
+        <!-- 底部工具列：手動切換日期與嵌入碼複製輔助 -->
+        <div class="mt-4 pt-3 border-t border-[#E6DEC8] flex flex-wrap items-center justify-between gap-2 text-xs text-[#787166] relative z-10">
+            <div class="flex items-center gap-2">
+                <label for="manual-date-picker" class="hover:text-[#2B2B2B] cursor-pointer flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5 text-[#C53D43]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    <span>指定音檔日期：</span>
+                </label>
+                <input 
+                    type="date" 
+                    id="manual-date-picker" 
+                    class="bg-white border border-[#D5CBB8] rounded px-2 py-0.5 text-xs text-[#2B2B2B] focus:outline-none focus:border-[#1E3A5F]"
+                />
+                <button 
+                    id="reset-today-btn" 
+                    type="button"
+                    class="hidden text-[#1E3A5F] underline hover:text-[#C53D43] ml-1"
+                >
+                    回今日推算
+                </button>
+            </div>
+
+            <!-- 切換顯示 iframe 嵌入語法按鈕 -->
+            <button 
+                id="toggle-iframe-code-btn"
+                type="button" 
+                class="text-[#6E685F] hover:text-[#1E3A5F] flex items-center gap-1 transition-colors"
+                title="查看如何用 iframe 嵌入網頁"
+            >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                </svg>
+                <span>嵌入語法 (iframe)</span>
+            </button>
+        </div>
+
+        <!-- 隱藏的 iframe 嵌入說明面板 -->
+        <div id="iframe-helper-box" class="hidden mt-3 p-3 bg-white border border-[#D5CBB8] rounded-md text-xs text-[#3D3934] relative z-10">
+            <div class="flex items-center justify-between mb-1.5">
+                <span class="font-semibold text-[#1E3A5F]">將此播放器嵌入您的網站：</span>
+                <button id="copy-iframe-btn" class="px-2 py-0.5 bg-[#1E3A5F] text-[#FFFFFF] rounded hover:bg-[#2c5282] transition">
+                    複製語法
+                </button>
+            </div>
+            <p class="text-[11px] text-[#6E685F] mb-2">請將此檔案上傳至您的網站空間，並使用以下 `&lt;iframe&gt;` 標籤嵌入：</p>
+            <textarea id="iframe-code-textarea" readonly rows="2" class="w-full p-2 rounded bg-white border border-[#D5CBB8] font-mono text-[11px] text-[#2B2B2B] focus:outline-none">&lt;iframe src="icrt_japanese_player.html" width="100%" height="250" style="border:none; max-width:600px; overflow:hidden;" loading="lazy" title="ICRT 每日英語廣播"&gt;&lt;/iframe&gt;</textarea>
+        </div>
+    </div>
+
+    <script>
+        /*
+         * ICRT 每日英語廣播 - 日式和風版 v1.7.1 (相容 v1.6.0 邏輯)
+         * 邏輯: "猜測" 音檔 URL + 連結到 "已發佈" 的 Google Doc + 支援手動切換回顧
+         */
+        (function() {
+            // --- 1. [!!重要設定!!] ---
+            // 貼上 "已發佈" 的 Google Doc 連結 (結尾是 /pub)
+            const PUBLISHED_DOC_URL = 'https://docs.google.com/document/d/e/2PACX-1vQZgANuYk8nK9TrrUFAj50LzbwE6MohMwJucp2n3nDn4X-s8jD9QvAD2n5rmOeJI0SidB01AMCWA-Wn/pub';
+            // ---------------------------
+
+            const contentDiv = document.getElementById('player-content-v1-6-0');
+            const dateBadge = document.getElementById('japanese-date-badge');
+            const datePicker = document.getElementById('manual-date-picker');
+            const resetBtn = document.getElementById('reset-today-btn');
+            const toggleIframeBtn = document.getElementById('toggle-iframe-code-btn');
+            const iframeHelperBox = document.getElementById('iframe-helper-box');
+            const copyIframeBtn = document.getElementById('copy-iframe-btn');
+            const iframeTextarea = document.getElementById('iframe-code-textarea');
+
+            if (!contentDiv) return;
+
+            // 中文星期對照表
+            const CHINESE_DAYS = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+
+            // 輔助函式: 格式化日期為 "YYYYMMDD" 供音檔連結使用
+            const formatDateYYYYMMDD = (dateObj) => {
+                const year = dateObj.getFullYear();
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                return `${year}${month}${day}`;
+            };
+
+            // 輔助函式: 格式化為 input[type="date"] 所需的 "YYYY-MM-DD"
+            const formatDateInput = (dateObj) => {
+                const year = dateObj.getFullYear();
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+
+            // 輔助函式: 格式化為中文日期顯示 "YYYY年MM月DD日（週四）"
+            const formatChineseDisplayDate = (dateObj) => {
+                const year = dateObj.getFullYear();
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                const chineseDay = CHINESE_DAYS[dateObj.getDay()];
+                return `${year}年${month}月${day}日（${chineseDay}）`;
+            };
+
+            // 計算預設目標音檔日期與狀態
+            const getAutoTargetStatus = (baseDate) => {
+                const dayOfWeek = baseDate.getDay(); // 0 = 週日, 6 = 週六
+                let targetDate = new Date(baseDate);
+                let showPlayer = true;
+                let message = '';
+                let subMessage = '';
+
+                if (dayOfWeek === 0 || dayOfWeek === 6) {
+                    showPlayer = false;
+                    message = '今日無音檔 (Weekend)';
+                    subMessage = '週末期間無新廣播，您可點擊下方按鈕直接聽取上週五音檔，或閱讀每日文字檔。';
+                } else if (dayOfWeek === 1) {
+                    // 週一抓上週五 (-3天)
+                    targetDate.setDate(baseDate.getDate() - 3);
+                } else {
+                    // 週二至週五抓前一天 (-1天)
+                    targetDate.setDate(baseDate.getDate() - 1);
+                }
+
+                return { targetDate, showPlayer, message, subMessage };
+            };
+
+            // 取得最近一個週五的日期（供週末一鍵試聽使用）
+            const getLastFriday = (fromDate) => {
+                const d = new Date(fromDate);
+                const day = d.getDay();
+                const diff = (day === 0) ? 2 : (day === 6 ? 1 : 0);
+                d.setDate(d.getDate() - diff);
+                return d;
+            };
+
+            // 渲染播放器或週末休講訊息
+            const renderPlayer = (options) => {
+                const { targetDate, showPlayer, message, subMessage, isManual } = options;
+                contentDiv.innerHTML = '';
+
+                // 更新右上角中文日期與星期標籤
+                if (dateBadge) {
+                    dateBadge.textContent = showPlayer 
+                        ? `播出日：${formatChineseDisplayDate(targetDate)}`
+                        : `今日：${formatChineseDisplayDate(new Date())}`;
+                }
+
+                // 同步日期選擇器數值
+                if (datePicker && showPlayer) {
+                    datePicker.value = formatDateInput(targetDate);
+                }
+
+                if (showPlayer) {
+                    const dateString = formatDateYYYYMMDD(targetDate);
+                    const guessedAudioUrl = `https://www.icrt.com.tw/en/ext/rss/LunchBox/${dateString}NK.mp3`;
+
+                    // 外層和風容器
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'space-y-4';
+
+                    // 音訊播放器區塊
+                    const audioBox = document.createElement('div');
+                    audioBox.className = 'bg-white border border-[#E2D9C8] rounded-lg p-3';
+
+                    const audioHeader = document.createElement('div');
+                    audioHeader.className = 'flex items-center justify-between text-xs text-[#5C5549] mb-2 px-1';
+                    audioHeader.innerHTML = `
+                        <span class="flex items-center gap-1.5 font-medium">
+                            <svg class="w-4 h-4 text-[#1E3A5F]" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z"/>
+                            </svg>
+                            音檔編號：${dateString}NK.mp3
+                        </span>
+                        <a href="${guessedAudioUrl}" target="_blank" rel="noopener noreferrer" class="text-[#1E3A5F] hover:text-[#C53D43] underline transition-colors">
+                            直接開啟音檔 ↗
+                        </a>
+                    `;
+
+                    // 建立 <audio> 播放器
+                    const audioPlayer = document.createElement('audio');
+                    audioPlayer.controls = true;
+                    audioPlayer.preload = 'none';
+
+                    const source = document.createElement('source');
+                    source.src = guessedAudioUrl;
+                    source.type = 'audio/mpeg';
+
+                    audioPlayer.appendChild(source);
+                    audioPlayer.appendChild(document.createTextNode('您的瀏覽器不支援音訊播放。'));
+
+                    // 音檔載入失敗提示 (例如國定假日無音檔時)
+                    const errorHint = document.createElement('p');
+                    errorHint.className = 'hidden text-xs text-[#C53D43] mt-2 px-1';
+                    errorHint.textContent = '※ 無法載入該日音檔，可能適逢假日或尚未發佈，請由下方切換其他日期。';
+                    
+                    source.addEventListener('error', () => {
+                        errorHint.classList.remove('hidden');
+                    });
+
+                    audioBox.appendChild(audioHeader);
+                    audioBox.appendChild(audioPlayer);
+                    audioBox.appendChild(errorHint);
+
+                    // 建立 <a> 連結 (日式藍染織布按鈕樣式)
+                    const link = document.createElement('a');
+                    link.href = PUBLISHED_DOC_URL;
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    link.className = 'transcript-link btn-wafuu flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-md bg-[#1E3A5F] hover:bg-[#162C49] text-[#F9F6F0] font-semibold text-sm tracking-widest shadow-sm border border-[#12233A]';
+                    link.innerHTML = `
+                        <svg class="w-4 h-4 text-[#DFC89E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                        </svg>
+                        <span>—— ICRT 每日文字檔（講義閱覽）——</span>
+                    `;
+
+                    wrapper.appendChild(audioBox);
+                    wrapper.appendChild(link);
+                    contentDiv.appendChild(wrapper);
+
+                } else {
+                    // 顯示週末休講訊息 + 貼心提供「聽取上週五」與「開啟文字檔」按鈕
+                    const weekendBox = document.createElement('div');
+                    weekendBox.className = 'bg-white border border-[#E2D9C8] rounded-lg p-4 text-center space-y-3';
+
+                    const status = document.createElement('p');
+                    status.className = 'status-message text-base font-bold text-[#C53D43] tracking-widest flex items-center justify-center gap-2';
+                    status.innerHTML = `<span>🍵</span> <span>${message}</span>`;
+
+                    const sub = document.createElement('p');
+                    sub.className = 'text-xs text-[#5C5549] leading-relaxed';
+                    sub.textContent = subMessage;
+
+                    const actionRow = document.createElement('div');
+                    actionRow.className = 'flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-1';
+
+                    // 週末也能一鍵播放上週五音檔
+                    const playFridayBtn = document.createElement('button');
+                    playFridayBtn.type = 'button';
+                    playFridayBtn.className = 'btn-wafuu w-full sm:w-auto px-4 py-2 rounded-md bg-[#5B6E58] hover:bg-[#4A5A47] text-[#F9F6F0] text-xs font-semibold tracking-wider';
+                    playFridayBtn.textContent = '▶ 聽取最近一期（週五）音檔';
+                    playFridayBtn.addEventListener('click', () => {
+                        const lastFri = getLastFriday(new Date());
+                        resetBtn.classList.remove('hidden');
+                        renderPlayer({
+                            targetDate: lastFri,
+                            showPlayer: true,
+                            isManual: true
+                        });
+                    });
+
+                    // 週末依然可查看每日文字檔
+                    const docLink = document.createElement('a');
+                    docLink.href = PUBLISHED_DOC_URL;
+                    docLink.target = '_blank';
+                    docLink.rel = 'noopener noreferrer';
+                    docLink.className = 'transcript-link btn-wafuu w-full sm:w-auto px-4 py-2 rounded-md bg-[#1E3A5F] hover:bg-[#162C49] text-[#F9F6F0] text-xs font-semibold tracking-wider text-center';
+                    docLink.textContent = '📖 開啟 ICRT 每日文字檔';
+
+                    actionRow.appendChild(playFridayBtn);
+                    actionRow.appendChild(docLink);
+
+                    weekendBox.appendChild(status);
+                    weekendBox.appendChild(sub);
+                    weekendBox.appendChild(actionRow);
+                    contentDiv.appendChild(weekendBox);
+                }
+            };
+
+            // 初始載入：依照原本邏輯推算今日狀態
+            const initDefault = () => {
+                const today = new Date();
+                const autoStatus = getAutoTargetStatus(today);
+                resetBtn.classList.add('hidden');
+                renderPlayer({
+                    ...autoStatus,
+                    isManual: false
+                });
+            };
+
+            // 綁定手動選擇日期事件
+            if (datePicker) {
+                datePicker.addEventListener('change', (e) => {
+                    if (!e.target.value) return;
+                    const parts = e.target.value.split('-');
+                    const chosenDate = new Date(
+                        parseInt(parts[0], 10),
+                        parseInt(parts[1], 10) - 1,
+                        parseInt(parts[2], 10)
+                    );
+                    resetBtn.classList.remove('hidden');
+                    renderPlayer({
+                        targetDate: chosenDate,
+                        showPlayer: true,
+                        isManual: true
+                    });
+                });
+            }
+
+            // 綁定回到今日推算按鈕
+            if (resetBtn) {
+                resetBtn.addEventListener('click', () => {
+                    initDefault();
+                });
+            }
+
+            // 綁定 iframe 嵌入語法顯示與複製
+            if (toggleIframeBtn && iframeHelperBox) {
+                toggleIframeBtn.addEventListener('click', () => {
+                    iframeHelperBox.classList.toggle('hidden');
+                });
+            }
+
+            if (copyIframeBtn && iframeTextarea) {
+                copyIframeBtn.addEventListener('click', () => {
+                    iframeTextarea.select();
+                    document.execCommand('copy');
+                    const originalText = copyIframeBtn.textContent;
+                    copyIframeBtn.textContent = '已複製！';
+                    setTimeout(() => {
+                        copyIframeBtn.textContent = originalText;
+                    }, 1800);
+                });
+            }
+
+            // 啟動執行
+            initDefault();
+        })();
+    </script>
+</body>
+</html>
