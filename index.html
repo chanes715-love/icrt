@@ -88,12 +88,19 @@
         .btn-wafuu:active {
             transform: translateY(0);
         }
+
+        /* 緊湊化日期選擇器內建日曆圖示間距，讓大字體也能完整放入 340px 寬度 */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            margin-left: 0px;
+            padding: 0px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body class="m-0 p-0 bg-white overflow-hidden flex items-center justify-center w-[340px] h-[220px]">
 
     <!-- 主外框：精準對應 340x220 像素尺寸，適合直接透過 iframe 嵌入 -->
-    <div class="washi-container japanese-frame rounded-lg w-[340px] h-[220px] px-3 py-3 relative overflow-hidden bg-white flex flex-col justify-between box-border">
+    <div class="washi-container japanese-frame rounded-lg w-[340px] h-[220px] px-2.5 py-2.5 relative overflow-hidden bg-white flex flex-col justify-between box-border">
         
         <!-- 角落裝飾：傳統梅花/櫻花家紋浮水印 -->
         <svg class="w-20 h-20 text-gray-100 opacity-60 absolute -right-4 -top-4 pointer-events-none" 
@@ -103,34 +110,31 @@
         </svg>
 
         <!-- 頂部標題與右上角指定日期欄 -->
-        <div class="flex items-center justify-between gap-1 pb-1.5 border-b border-[#E5DEC9] relative z-10">
+        <div class="flex items-center justify-between gap-1 pb-1.5 border-b border-[#E5DEC9] relative z-10 w-full">
             <div class="flex items-center gap-1.5 shrink-0">
-                <!-- 朱印徽章 -->
-                <div class="hanko-stamp px-1.5 py-0.5 text-xs rounded select-none bg-white leading-tight">
-                    英語廣播
+                <!-- 朱印徽章：改為「英語廣播」雙行印章排版，美觀且不擠壓右側空間 -->
+                <div class="hanko-stamp px-1 py-0.5 text-[11px] rounded select-none bg-white leading-[1.1] text-center">
+                    英語<br>廣播
                 </div>
-                <h1 class="text-base font-bold tracking-wider text-[#2B2B2B]">
+                <h1 class="text-base font-bold tracking-tight text-[#2B2B2B]">
                     ICRT
                 </h1>
             </div>
 
-            <!-- 右上角：指定日期選擇器 + 星期顯示 + 回今日 -->
-            <div class="flex items-center gap-1 bg-white border border-[#C8B69E] hover:border-[#1E3A5F] px-1.5 py-1 rounded text-xs text-[#4A443B] shadow-sm transition-colors">
-                <label for="manual-date-picker" class="text-xs text-[#5C5549] font-bold shrink-0 cursor-pointer select-none">
-                    日期:
-                </label>
+            <!-- 右上角：指定日期選擇器 + 星期顯示 + 回今日 (字體全面加大至 text-sm 14px，並確保「今」完整顯示) -->
+            <div class="flex items-center gap-0.5 bg-white border border-[#C8B69E] hover:border-[#1E3A5F] px-1.5 py-0.5 rounded text-sm text-[#4A443B] shadow-sm transition-colors shrink-0">
                 <input 
                     type="date" 
                     id="manual-date-picker" 
                     title="點擊選擇日期以聽取該日音檔"
-                    class="bg-white text-xs text-[#1E3A5F] font-bold focus:outline-none cursor-pointer w-[112px]"
+                    class="bg-white text-sm text-[#1E3A5F] font-bold focus:outline-none cursor-pointer w-[112px] tracking-tighter"
                 />
-                <span id="japanese-date-badge" class="tracking-tight font-bold text-[#C53D43] text-xs shrink-0 select-none">(載入中)</span>
+                <span id="japanese-date-badge" class="tracking-tighter font-bold text-[#C53D43] text-sm shrink-0 select-none">(載入中)</span>
                 <button 
                     id="reset-today-btn" 
                     type="button"
                     title="回到今日最新音檔"
-                    class="hidden bg-[#FAF6F0] border border-[#D5CBB8] px-1.5 py-0.5 rounded text-[#1E3A5F] hover:text-[#C53D43] hover:border-[#C53D43] text-xs font-bold shrink-0 transition-colors"
+                    class="hidden bg-[#FAF6F0] border border-[#D5CBB8] px-1.5 py-0.5 rounded text-[#1E3A5F] hover:text-[#C53D43] hover:border-[#C53D43] text-sm font-bold shrink-0 transition-colors leading-none"
                 >
                     今
                 </button>
@@ -235,23 +239,23 @@
 
                     // 外層和風容器 (適配 340x220 高度的間距)
                     const wrapper = document.createElement('div');
-                    wrapper.className = 'space-y-2.5';
+                    wrapper.className = 'space-y-2';
 
                     // 音訊播放器區塊
                     const audioBox = document.createElement('div');
                     audioBox.className = 'bg-white border border-[#E2D9C8] rounded px-2.5 py-2';
 
                     const audioHeader = document.createElement('div');
-                    audioHeader.className = 'flex items-center justify-between text-sm text-[#5C5549] mb-1.5';
+                    audioHeader.className = 'flex items-center justify-between mb-1.5';
                     audioHeader.innerHTML = `
-                        <span class="flex items-center gap-1 font-bold text-[#2B2B2B]">
+                        <span class="flex items-center gap-1 text-base font-bold text-[#2B2B2B] tracking-tight">
                             <svg class="w-4 h-4 text-[#1E3A5F] shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z"/>
                             </svg>
                             音檔：${dateString}NK.mp3
                         </span>
-                        <a href="${guessedAudioUrl}" target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-[#1E3A5F] hover:text-[#C53D43] underline transition-colors shrink-0">
-                            開啟音檔 ↗
+                        <a href="${guessedAudioUrl}" target="_blank" rel="noopener noreferrer" class="text-sm font-bold text-[#1E3A5F] hover:text-[#C53D43] underline transition-colors shrink-0">
+                            開啟 ↗
                         </a>
                     `;
 
@@ -272,14 +276,14 @@
                     audioBox.appendChild(audioHeader);
                     audioBox.appendChild(audioPlayer);
 
-                    // 建立 <a> 連結 (日式藍染織布按鈕樣式)
+                    // 建立 <a> 連結 (日式藍染織布按鈕樣式，字體放大至 text-base 16px)
                     const link = document.createElement('a');
                     link.href = PUBLISHED_DOC_URL;
                     link.target = '_blank';
                     link.rel = 'noopener noreferrer';
-                    link.className = 'transcript-link btn-wafuu flex items-center justify-center gap-1.5 w-full py-2 px-3 rounded bg-[#1E3A5F] hover:bg-[#162C49] text-[#FFFFFF] font-bold text-sm tracking-wider shadow-sm border border-[#12233A]';
+                    link.className = 'transcript-link btn-wafuu flex items-center justify-center gap-1.5 w-full py-2 px-3 rounded bg-[#1E3A5F] hover:bg-[#162C49] text-[#FFFFFF] font-bold text-base tracking-wider shadow-sm border border-[#12233A]';
                     link.innerHTML = `
-                        <svg class="w-4 h-4 text-[#DFC89E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 text-[#DFC89E] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                         </svg>
                         <span>—— ICRT 每日文字檔 ——</span>
@@ -290,16 +294,16 @@
                     contentDiv.appendChild(wrapper);
 
                 } else {
-                    // 顯示週末休講訊息
+                    // 顯示週末休講訊息 (字體同步放大)
                     const weekendBox = document.createElement('div');
                     weekendBox.className = 'bg-white border border-[#E2D9C8] rounded p-2.5 text-center space-y-2';
 
                     const status = document.createElement('p');
-                    status.className = 'status-message text-sm font-bold text-[#C53D43] tracking-wider flex items-center justify-center gap-1';
+                    status.className = 'status-message text-base font-bold text-[#C53D43] tracking-wider flex items-center justify-center gap-1';
                     status.innerHTML = `<span>🍵</span> <span>${message}</span>`;
 
                     const sub = document.createElement('p');
-                    sub.className = 'text-xs text-[#5C5549] font-medium';
+                    sub.className = 'text-sm text-[#5C5549] font-bold';
                     sub.textContent = subMessage;
 
                     const actionRow = document.createElement('div');
@@ -308,7 +312,7 @@
                     // 週末一鍵播放上週五音檔
                     const playFridayBtn = document.createElement('button');
                     playFridayBtn.type = 'button';
-                    playFridayBtn.className = 'btn-wafuu px-3 py-1.5 rounded bg-[#5B6E58] hover:bg-[#4A5A47] text-[#FFFFFF] text-xs font-bold';
+                    playFridayBtn.className = 'btn-wafuu px-3 py-1.5 rounded bg-[#5B6E58] hover:bg-[#4A5A47] text-[#FFFFFF] text-sm font-bold';
                     playFridayBtn.textContent = '▶ 聽週五音檔';
                     playFridayBtn.addEventListener('click', () => {
                         const lastFri = getLastFriday(new Date());
@@ -325,7 +329,7 @@
                     docLink.href = PUBLISHED_DOC_URL;
                     docLink.target = '_blank';
                     docLink.rel = 'noopener noreferrer';
-                    docLink.className = 'transcript-link btn-wafuu px-3 py-1.5 rounded bg-[#1E3A5F] hover:bg-[#162C49] text-[#FFFFFF] text-xs font-bold';
+                    docLink.className = 'transcript-link btn-wafuu px-3 py-1.5 rounded bg-[#1E3A5F] hover:bg-[#162C49] text-[#FFFFFF] text-sm font-bold';
                     docLink.textContent = '📖 每日文字檔';
 
                     actionRow.appendChild(playFridayBtn);
